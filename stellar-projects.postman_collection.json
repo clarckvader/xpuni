@@ -267,6 +267,20 @@
             }
           }
         }
+        ,
+        {
+          "name": "Subir imagen de recompensa (ADMIN)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/rewards/1/image",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "image", "type": "file", "src": "" }
+              ]
+            }
+          }
+        }
       ]
     },
     {
@@ -308,6 +322,19 @@
               "mode": "raw",
               "raw": "{\n  \"notes\": \"Recompensa entregada en ventanilla.\"\n}"
             }
+          }
+        }
+      ]
+    }
+    ,
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Server health",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
           }
         }
       ]

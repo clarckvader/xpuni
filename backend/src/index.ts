@@ -35,7 +35,7 @@ app.use('/api/rewards', rewardsRouter);
 app.use('/api/redemptions', redemptionsRouter);
 
 // Ruta raíz de salud
-app.get('/health', (_req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
     service: 'School Rewards API',
@@ -108,7 +108,7 @@ async function bootstrap() {
     console.log(`  POST   /api/submissions`);
     console.log(`  GET    /api/rewards`);
     console.log(`  POST   /api/redemptions`);
-    console.log(`\n  GET    /health`);
+    console.log(`\n  GET    /api/health`);
   });
 }
 

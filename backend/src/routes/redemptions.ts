@@ -133,31 +133,56 @@ router.post(
 // ADMIN/REVIEWER: todos | STUDENT: solo los propios
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   const isStudent = req.user!.role === 'STUDENT';
+  const statusParam = req.query['status'] as string | undefined;
 
+  // Use flat aliases to avoid duplicate 'id' column collision across joins
   const baseQuery = db
     .select({
-      id: redemptions.id,
+      redemptionId: redemptions.id,
       pointsSpent: redemptions.pointsSpent,
       status: redemptions.status,
       txHash: redemptions.txHash,
+      redemptionTxHash: redemptions.redemptionTxHash,
       notes: redemptions.notes,
       redeemedAt: redemptions.redeemedAt,
       completedAt: redemptions.completedAt,
-      student: { id: users.id, email: users.email },
-      reward: {
-        id: rewards.id,
-        name: rewards.name,
-        rewardType: rewards.rewardType,
-      },
+      studentUserId: users.id,
+      studentEmail: users.email,
+      rewardId: rewards.id,
+      rewardName: rewards.name,
+      rewardType: rewards.rewardType,
     })
     .from(redemptions)
     .leftJoin(users, eq(redemptions.studentId, users.id))
     .leftJoin(rewards, eq(redemptions.rewardId, rewards.id))
     .orderBy(desc(redemptions.redeemedAt));
 
-  const result = isStudent
-    ? await baseQuery.where(eq(redemptions.studentId, req.user!.id))
-    : await baseQuery;
+  const studentFilter = isStudent ? eq(redemptions.studentId, req.user!.id) : undefined;
+  const statusFilter = statusParam ? eq(redemptions.status, statusParam as any) : undefined;
+
+  let rows;
+  if (studentFilter && statusFilter) {
+    rows = await baseQuery.where(and(studentFilter, statusFilter));
+  } else if (studentFilter) {
+    rows = await baseQuery.where(studentFilter);
+  } else if (statusFilter) {
+    rows = await baseQuery.where(statusFilter);
+  } else {
+    rows = await baseQuery;
+  }
+
+  const result = rows.map(r => ({
+    id: r.redemptionId,
+    pointsSpent: r.pointsSpent,
+    status: r.status,
+    txHash: r.txHash,
+    redemptionTxHash: r.redemptionTxHash,
+    notes: r.notes,
+    redeemedAt: r.redeemedAt,
+    completedAt: r.completedAt,
+    student: r.studentUserId ? { id: r.studentUserId, email: r.studentEmail } : null,
+    reward: r.rewardId ? { id: r.rewardId, name: r.rewardName, rewardType: r.rewardType } : null,
+  }));
 
   res.json({ data: result });
 });

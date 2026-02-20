@@ -23,7 +23,7 @@ const updateRewardSchema = createRewardSchema.partial().extend({
 });
 
 const rewardSelect = {
-  id: rewards.id,
+  rewardId: rewards.id,
   name: rewards.name,
   description: rewards.description,
   pointsCost: rewards.pointsCost,
@@ -32,8 +32,24 @@ const rewardSelect = {
   imageUrl: rewards.imageUrl,
   status: rewards.status,
   createdAt: rewards.createdAt,
-  createdBy: { id: users.id, email: users.email },
+  createdByUserId: users.id,
+  createdByEmail: users.email,
 };
+
+function mapReward(r: Record<string, unknown>) {
+  return {
+    id: r['rewardId'],
+    name: r['name'],
+    description: r['description'],
+    pointsCost: r['pointsCost'],
+    rewardType: r['rewardType'],
+    stock: r['stock'],
+    imageUrl: r['imageUrl'],
+    status: r['status'],
+    createdAt: r['createdAt'],
+    createdBy: r['createdByUserId'] ? { id: r['createdByUserId'], email: r['createdByEmail'] } : null,
+  };
+}
 
 // GET /api/rewards — lista recompensas
 // STUDENT: solo ACTIVE | ADMIN/REVIEWER: todas
@@ -46,11 +62,11 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     .leftJoin(users, eq(rewards.createdBy, users.id))
     .orderBy(desc(rewards.createdAt));
 
-  const result = isStudent
+  const rows = isStudent
     ? await baseQuery.where(eq(rewards.status, 'ACTIVE'))
     : await baseQuery;
 
-  res.json({ data: result });
+  res.json({ data: rows.map(mapReward) });
 });
 
 // GET /api/rewards/:id — detalle de una recompensa
@@ -61,18 +77,18 @@ router.get('/:id', authenticate, async (req, res: Response) => {
     return;
   }
 
-  const [reward] = await db
+  const [row] = await db
     .select(rewardSelect)
     .from(rewards)
     .leftJoin(users, eq(rewards.createdBy, users.id))
     .where(eq(rewards.id, rewardId));
 
-  if (!reward) {
+  if (!row) {
     res.status(404).json({ error: 'Recompensa no encontrada' });
     return;
   }
 
-  res.json({ data: reward });
+  res.json({ data: mapReward(row) });
 });
 
 // POST /api/rewards — crea una recompensa (solo ADMIN)
@@ -126,6 +142,25 @@ router.patch('/:id', authenticate, requireRole('ADMIN'), async (req, res: Respon
 
   const [updated] = await db.select().from(rewards).where(eq(rewards.id, rewardId));
   res.json({ data: updated });
+});
+
+// DELETE /api/rewards/:id — desactiva una recompensa (solo ADMIN)
+router.delete('/:id', authenticate, requireRole('ADMIN'), async (req, res: Response) => {
+  const rewardId = parseInt(req.params['id'] ?? '', 10);
+  if (isNaN(rewardId)) {
+    res.status(400).json({ error: 'ID inválido' });
+    return;
+  }
+
+  const [existing] = await db.select().from(rewards).where(eq(rewards.id, rewardId));
+  if (!existing) {
+    res.status(404).json({ error: 'Recompensa no encontrada' });
+    return;
+  }
+
+  await db.update(rewards).set({ status: 'INACTIVE' }).where(eq(rewards.id, rewardId));
+
+  res.json({ message: 'Recompensa desactivada correctamente' });
 });
 
 // POST /api/rewards/:id/image — sube imagen de la recompensa (solo ADMIN)

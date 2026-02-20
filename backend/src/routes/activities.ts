@@ -23,7 +23,7 @@ const updateActivitySchema = createActivitySchema.partial().extend({
 });
 
 const activitySelect = {
-  id: activities.id,
+  activityId: activities.id,
   title: activities.title,
   description: activities.description,
   pointsReward: activities.pointsReward,
@@ -32,8 +32,24 @@ const activitySelect = {
   status: activities.status,
   badgeImageUrl: activities.badgeImageUrl,
   createdAt: activities.createdAt,
-  createdBy: { id: users.id, email: users.email },
+  createdByUserId: users.id,
+  createdByEmail: users.email,
 };
+
+function mapActivity(r: Record<string, unknown>) {
+  return {
+    id: r['activityId'],
+    title: r['title'],
+    description: r['description'],
+    pointsReward: r['pointsReward'],
+    deadline: r['deadline'],
+    maxSubmissions: r['maxSubmissions'],
+    status: r['status'],
+    badgeImageUrl: r['badgeImageUrl'],
+    createdAt: r['createdAt'],
+    createdBy: r['createdByUserId'] ? { id: r['createdByUserId'], email: r['createdByEmail'] } : null,
+  };
+}
 
 // GET /api/activities — lista actividades (ACTIVE por defecto para estudiantes)
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
@@ -45,11 +61,11 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     .leftJoin(users, eq(activities.createdBy, users.id))
     .orderBy(desc(activities.createdAt));
 
-  const result = showAll
+  const rows = showAll
     ? await baseQuery
     : await baseQuery.where(eq(activities.status, 'ACTIVE'));
 
-  res.json({ data: result });
+  res.json({ data: rows.map(mapActivity) });
 });
 
 // GET /api/activities/:id — detalle de una actividad
@@ -60,18 +76,18 @@ router.get('/:id', authenticate, async (req, res: Response) => {
     return;
   }
 
-  const [activity] = await db
+  const [row] = await db
     .select(activitySelect)
     .from(activities)
     .leftJoin(users, eq(activities.createdBy, users.id))
     .where(eq(activities.id, activityId));
 
-  if (!activity) {
+  if (!row) {
     res.status(404).json({ error: 'Actividad no encontrada' });
     return;
   }
 
-  res.json({ data: activity });
+  res.json({ data: mapActivity(row) });
 });
 
 // POST /api/activities — crea una actividad (solo ADMIN)

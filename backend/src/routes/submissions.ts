@@ -94,10 +94,13 @@ router.post(
 // ADMIN/REVIEWER: todas | STUDENT: solo las propias
 router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
   const isStudent = req.user!.role === 'STUDENT';
+  const statusParam = req.query['status'] as string | undefined;
 
+  // Note: use flat column aliases (not nested objects) to avoid duplicate 'id'
+  // column names when Node's native sqlite collapses object keys.
   const baseQuery = db
     .select({
-      id: proofSubmissions.id,
+      submissionId: proofSubmissions.id,
       description: proofSubmissions.description,
       fileUrl: proofSubmissions.fileUrl,
       status: proofSubmissions.status,
@@ -106,16 +109,41 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
       badgeTxHash: proofSubmissions.badgeTxHash,
       submittedAt: proofSubmissions.submittedAt,
       reviewedAt: proofSubmissions.reviewedAt,
-      student: { id: users.id, email: users.email },
+      studentUserId: users.id,
+      studentEmail: users.email,
       activityId: proofSubmissions.activityId,
     })
     .from(proofSubmissions)
     .leftJoin(users, eq(proofSubmissions.studentId, users.id))
     .orderBy(desc(proofSubmissions.submittedAt));
 
-  const result = isStudent
-    ? await baseQuery.where(eq(proofSubmissions.studentId, req.user!.id))
-    : await baseQuery;
+  const studentFilter = isStudent ? eq(proofSubmissions.studentId, req.user!.id) : undefined;
+  const statusFilter = statusParam ? eq(proofSubmissions.status, statusParam as any) : undefined;
+
+  let rows;
+  if (studentFilter && statusFilter) {
+    rows = await baseQuery.where(and(studentFilter, statusFilter));
+  } else if (studentFilter) {
+    rows = await baseQuery.where(studentFilter);
+  } else if (statusFilter) {
+    rows = await baseQuery.where(statusFilter);
+  } else {
+    rows = await baseQuery;
+  }
+
+  const result = rows.map(r => ({
+    id: r.submissionId,
+    description: r.description,
+    fileUrl: r.fileUrl,
+    status: r.status,
+    reviewerNotes: r.reviewerNotes,
+    txHash: r.txHash,
+    badgeTxHash: r.badgeTxHash,
+    submittedAt: r.submittedAt,
+    reviewedAt: r.reviewedAt,
+    student: r.studentUserId ? { id: r.studentUserId, email: r.studentEmail } : null,
+    activityId: r.activityId,
+  }));
 
   res.json({ data: result });
 });
@@ -128,10 +156,44 @@ router.get('/:id', authenticate, async (req: AuthRequest, res: Response) => {
     return;
   }
 
-  const [submission] = await db
-    .select()
+  // Use flat column aliases to avoid 'id' column collision between tables
+  const [row] = await db
+    .select({
+      submissionId: proofSubmissions.id,
+      studentId: proofSubmissions.studentId,
+      activityId: proofSubmissions.activityId,
+      description: proofSubmissions.description,
+      fileUrl: proofSubmissions.fileUrl,
+      status: proofSubmissions.status,
+      reviewerId: proofSubmissions.reviewerId,
+      reviewerNotes: proofSubmissions.reviewerNotes,
+      txHash: proofSubmissions.txHash,
+      badgeTxHash: proofSubmissions.badgeTxHash,
+      submittedAt: proofSubmissions.submittedAt,
+      reviewedAt: proofSubmissions.reviewedAt,
+      studentEmail: users.email,
+    })
     .from(proofSubmissions)
+    .leftJoin(users, eq(proofSubmissions.studentId, users.id))
     .where(eq(proofSubmissions.id, submissionId));
+
+  const submission = row
+    ? {
+        id: row.submissionId,
+        studentId: row.studentId,
+        activityId: row.activityId,
+        description: row.description,
+        fileUrl: row.fileUrl,
+        status: row.status,
+        reviewerId: row.reviewerId,
+        reviewerNotes: row.reviewerNotes,
+        txHash: row.txHash,
+        badgeTxHash: row.badgeTxHash,
+        submittedAt: row.submittedAt,
+        reviewedAt: row.reviewedAt,
+        student: { id: row.studentId, email: row.studentEmail },
+      }
+    : undefined;
 
   if (!submission) {
     res.status(404).json({ error: 'Prueba no encontrada' });

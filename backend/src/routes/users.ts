@@ -113,6 +113,33 @@ router.get('/:id', authenticate, requireRole('ADMIN'), async (req, res: Response
   res.json({ data: user });
 });
 
+// DELETE /api/users/:id — elimina un usuario (solo ADMIN)
+router.delete('/:id', authenticate, requireRole('ADMIN'), async (req: AuthRequest, res: Response) => {
+  const userId = parseInt(req.params['id'] ?? '', 10);
+  if (isNaN(userId)) {
+    res.status(400).json({ error: 'ID inválido' });
+    return;
+  }
+
+  if (userId === req.user!.id) {
+    res.status(400).json({ error: 'No puedes eliminarte a ti mismo' });
+    return;
+  }
+
+  const [user] = await db.select().from(users).where(eq(users.id, userId));
+  if (!user) {
+    res.status(404).json({ error: 'Usuario no encontrado' });
+    return;
+  }
+
+  try {
+    await db.delete(users).where(eq(users.id, userId));
+    res.json({ message: 'Usuario eliminado correctamente' });
+  } catch {
+    res.status(409).json({ error: 'No se puede eliminar el usuario porque tiene registros asociados' });
+  }
+});
+
 // PATCH /api/users/:id/role — cambia el rol de un usuario (solo ADMIN)
 router.patch('/:id/role', authenticate, requireRole('ADMIN'), async (req: AuthRequest, res: Response) => {
   const userId = parseInt(req.params['id'] ?? '', 10);
