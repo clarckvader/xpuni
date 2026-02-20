@@ -1,0 +1,316 @@
+{
+  "info": {
+    "name": "Stellar Projects API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register (Estudiante)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"estudiante@universidad.edu\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.token) {",
+                  "  pm.collectionVariables.set('token', res.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@universidad.edu\",\n  \"password\": \"Admin123secure\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Me (perfil + saldo)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Listar usuarios",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "Crear usuario (ADMIN/REVIEWER)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"reviewer@universidad.edu\",\n  \"password\": \"password123\",\n  \"role\": \"REVIEWER\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Detalle de usuario",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/users/1"
+          }
+        },
+        {
+          "name": "Cambiar rol de usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/users/1/role",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"REVIEWER\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Activities",
+      "item": [
+        {
+          "name": "Listar actividades",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/activities"
+          }
+        },
+        {
+          "name": "Detalle de actividad",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/activities/1"
+          }
+        },
+        {
+          "name": "Crear actividad (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/activities",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Taller de programación\",\n  \"description\": \"Participa en el taller de programación y obtén puntos extra.\",\n  \"pointsReward\": 100,\n  \"deadline\": null,\n  \"maxSubmissions\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar actividad (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/activities/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Taller de programación (actualizado)\",\n  \"pointsReward\": 150,\n  \"status\": \"ACTIVE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Desactivar actividad (ADMIN)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/activities/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submissions",
+      "item": [
+        {
+          "name": "Enviar prueba (STUDENT, con archivo)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/submissions",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "activity_id", "value": "1", "type": "text" },
+                { "key": "description", "value": "Completé el taller y adjunto la evidencia.", "type": "text" },
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar pruebas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/submissions"
+          }
+        },
+        {
+          "name": "Detalle de prueba",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/submissions/1"
+          }
+        },
+        {
+          "name": "Aprobar prueba (ADMIN/REVIEWER)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/submissions/1/approve",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Excelente trabajo, aprobado.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Rechazar prueba (ADMIN/REVIEWER)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/submissions/1/reject",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"La evidencia no es suficiente, por favor re-envía.\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rewards",
+      "item": [
+        {
+          "name": "Listar recompensas",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/rewards"
+          }
+        },
+        {
+          "name": "Detalle de recompensa",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/rewards/1"
+          }
+        },
+        {
+          "name": "Crear recompensa (ADMIN)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/rewards",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Descuento en librería\",\n  \"description\": \"Canjea tus puntos por un descuento del 20% en la librería universitaria.\",\n  \"pointsCost\": 200,\n  \"rewardType\": \"PHYSICAL\",\n  \"stock\": 10\n}"
+            }
+          }
+        },
+        {
+          "name": "Editar recompensa (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/rewards/1",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pointsCost\": 250,\n  \"stock\": 5,\n  \"status\": \"ACTIVE\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Redemptions",
+      "item": [
+        {
+          "name": "Canjear recompensa (STUDENT)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/redemptions",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rewardId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar canjes",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/redemptions"
+          }
+        },
+        {
+          "name": "Detalle de canje",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/redemptions/1"
+          }
+        },
+        {
+          "name": "Completar canje (ADMIN)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/redemptions/1/complete",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Recompensa entregada en ventanilla.\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
