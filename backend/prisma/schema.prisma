@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id                     Int      @id @default(autoincrement())
+  email                  String   @unique
+  passwordHash           String   @map("password_hash")
+  role                   String   @default("STUDENT")
+  stellarPublicKey       String   @map("stellar_public_key")
+  encryptedStellarSecret String   @map("encrypted_stellar_secret")
+  createdAt              String   @default(dbgenerated("(datetime('now'))")) @map("created_at")
+
+  activities           Activity[]        @relation("ActivityCreatedBy")
+  submissions          ProofSubmission[] @relation("SubmissionStudent")
+  reviewedSubmissions  ProofSubmission[] @relation("SubmissionReviewer")
+  rewards              Reward[]          @relation("RewardCreatedBy")
+  redemptions          Redemption[]      @relation("RedemptionStudent")
+
+  @@map("users")
+}
+
+model Activity {
+  id             Int      @id @default(autoincrement())
+  title          String
+  description    String
+  pointsReward   Int      @map("points_reward")
+  deadline       String?
+  maxSubmissions Int?     @map("max_submissions")
+  createdBy      Int      @map("created_by")
+  status         String   @default("ACTIVE")
+  badgeImageUrl  String?  @map("badge_image_url")
+  createdAt      String   @default(dbgenerated("(datetime('now'))")) @map("created_at")
+
+  creator     User              @relation("ActivityCreatedBy", fields: [createdBy], references: [id])
+  submissions ProofSubmission[]
+
+  @@map("activities")
+}
+
+model ProofSubmission {
+  id            Int     @id @default(autoincrement())
+  studentId     Int     @map("student_id")
+  activityId    Int     @map("activity_id")
+  description   String
+  fileUrl       String? @map("file_url")
+  status        String  @default("PENDING")
+  reviewerId    Int?    @map("reviewer_id")
+  reviewerNotes String? @map("reviewer_notes")
+  txHash        String? @map("tx_hash")
+  badgeTxHash   String? @map("badge_tx_hash")
+  submittedAt   String  @default(dbgenerated("(datetime('now'))")) @map("submitted_at")
+  reviewedAt    String? @map("reviewed_at")
+
+  student  User     @relation("SubmissionStudent", fields: [studentId], references: [id])
+  activity Activity @relation(fields: [activityId], references: [id])
+  reviewer User?    @relation("SubmissionReviewer", fields: [reviewerId], references: [id])
+
+  @@map("proof_submissions")
+}
+
+model Reward {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String
+  pointsCost  Int     @map("points_cost")
+  rewardType  String  @map("reward_type")
+  stock       Int?
+  imageUrl    String? @map("image_url")
+  createdBy   Int     @map("created_by")
+  status      String  @default("ACTIVE")
+  createdAt   String  @default(dbgenerated("(datetime('now'))")) @map("created_at")
+
+  creator     User         @relation("RewardCreatedBy", fields: [createdBy], references: [id])
+  redemptions Redemption[]
+
+  @@map("rewards")
+}
+
+model Redemption {
+  id               Int     @id @default(autoincrement())
+  studentId        Int     @map("student_id")
+  rewardId         Int     @map("reward_id")
+  pointsSpent      Int     @map("points_spent")
+  status           String  @default("PENDING")
+  txHash           String? @map("tx_hash")
+  redemptionTxHash String? @map("redemption_tx_hash")
+  notes            String?
+  redeemedAt       String  @default(dbgenerated("(datetime('now'))")) @map("redeemed_at")
+  completedAt      String? @map("completed_at")
+
+  student User   @relation("RedemptionStudent", fields: [studentId], references: [id])
+  reward  Reward @relation(fields: [rewardId], references: [id])
+
+  @@map("redemptions")
+}

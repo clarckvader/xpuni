@@ -45,3 +45,5 @@ export const config = {
     password: optional('INITIAL_ADMIN_PASSWORD', 'admin123'),
   },
 } as const;
+
+export type AppConfig = typeof config;

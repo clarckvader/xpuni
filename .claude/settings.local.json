@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(node -e:*)",
-      "Bash(node --version:*)"
+      "Bash(node --version:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx prisma:*)",
+      "WebFetch(domain:www.prisma.io)",
+      "Bash(npm install:*)"
     ]
   }
 }

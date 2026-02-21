@@ -1,13 +1,10 @@
 import 'dotenv/config';
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import bcrypt from 'bcryptjs';
-import { eq } from 'drizzle-orm';
 import { config } from './config';
-import { db, runMigrations } from './db';
-import { users } from './db/schema';
-import { generateAndFundAccount } from './services/stellar';
+import { authService } from './container';
+import { errorHandler } from './middleware/error-handler';
 
 import authRouter from './routes/auth';
 import usersRouter from './routes/users';
@@ -41,20 +38,14 @@ app.get('/api/health', (_req, res) => {
     service: 'School Rewards API',
     version: '1.0.0',
     network: config.stellar.network,
+    rpcUrl: config.stellar.rpcUrl,
     contract: config.stellar.contractId || 'no configurado',
+    badgeContract: config.stellar.badgeContractId || 'no configurado',
+    redemptionContract: config.stellar.redemptionContractId || 'no configurado',
+    adminPublicKey: config.stellar.adminPublicKey || 'no configurado',
+    adminSecretKey: config.stellar.adminSecretKey ? '✓ configurado' : '✗ FALTA',
+    encryptionKey: config.encryptionKey ? '✓ configurado' : '✗ FALTA',
   });
-});
-
-// ── Manejo de errores ─────────────────────────────────────────────────────────
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error('Error no manejado:', err);
-
-  if (err.message?.includes('Solo se permiten')) {
-    res.status(400).json({ error: err.message });
-    return;
-  }
-
-  res.status(500).json({ error: 'Error interno del servidor' });
 });
 
 // ── Ruta no encontrada ────────────────────────────────────────────────────────
@@ -62,40 +53,14 @@ app.use((_req, res) => {
   res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
+// ── Manejo de errores centralizado ────────────────────────────────────────────
+app.use(errorHandler);
+
 // ── Inicialización ────────────────────────────────────────────────────────────
 
 async function bootstrap() {
-  // 1. Crear tablas en la base de datos
-  runMigrations();
-  console.log('Base de datos inicializada');
+  await authService.seedAdmin();
 
-  // 2. Crear admin inicial si no existe ningún admin
-  const [adminExists] = await db
-    .select()
-    .from(users)
-    .where(eq(users.role, 'ADMIN'));
-
-  if (!adminExists) {
-    console.log('Creando usuario admin inicial...');
-    try {
-      const passwordHash = await bcrypt.hash(config.initialAdmin.password, 12);
-      const { publicKey, encryptedSecret } = await generateAndFundAccount();
-
-      await db.insert(users).values({
-        email: config.initialAdmin.email,
-        passwordHash,
-        role: 'ADMIN',
-        stellarPublicKey: publicKey,
-        encryptedStellarSecret: encryptedSecret,
-      });
-
-      console.log(`Admin creado: ${config.initialAdmin.email}`);
-    } catch (err) {
-      console.error('Error al crear el admin inicial:', err);
-    }
-  }
-
-  // 3. Iniciar servidor
   app.listen(config.port, () => {
     console.log(`\nSchool Rewards API corriendo en http://localhost:${config.port}`);
     console.log(`Red Stellar: ${config.stellar.network}`);

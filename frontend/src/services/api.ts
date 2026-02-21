@@ -244,7 +244,7 @@ class ApiClient {
   }
 
   async createRedemption(data: Types.CreateRedemptionRequest) {
-    const payload = { rewardId: data.reward_id }
+    const payload = { rewardId: Number(data.reward_id) }
     const response = await this.client.post<Types.Redemption>('/redemptions', payload)
     return this.normalize<Types.Redemption>(response)
   }
