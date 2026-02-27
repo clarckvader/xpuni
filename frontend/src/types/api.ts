@@ -7,8 +7,12 @@ export interface User {
   name: string
   role: UserRole
   stellar_key?: string
-  created_at: string
-  updated_at: string
+  stellarPublicKey?: string
+  institutionId?: number | null
+  pointsBalance?: string
+  created_at?: string
+  createdAt?: string
+  updated_at?: string
 }
 
 export interface AuthResponse {
@@ -26,6 +30,33 @@ export interface RegisterRequest {
   name: string
   password: string
   role?: UserRole
+  institutionSlug?: string
+}
+
+// Institution types
+export interface Institution {
+  id: number
+  name: string
+  slug: string
+  description: string | null
+  logoUrl: string | null
+  category: string
+  status: string
+  createdAt: string
+}
+
+export interface CreateInstitutionRequest {
+  name: string
+  slug: string
+  description?: string
+  category?: string
+}
+
+export interface UpdateInstitutionRequest {
+  name?: string
+  description?: string | null
+  logoUrl?: string | null
+  category?: string
 }
 
 // Activity types

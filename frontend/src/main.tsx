@@ -1,6 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import 'primereact/resources/themes/lara-dark-purple/theme.css'
+import 'primereact/resources/primereact.css'
+import 'primeicons/primeicons.css'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

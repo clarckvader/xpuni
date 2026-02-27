@@ -259,6 +259,31 @@ class ApiClient {
     return this.normalize<Types.Redemption>(response)
   }
 
+  // Institution endpoints
+  async listInstitutions() {
+    const response = await this.client.get<{ data: Types.Institution[] }>('/institutions')
+    return (response.data as any).data as Types.Institution[]
+  }
+
+  async getInstitution(slug: string) {
+    const response = await this.client.get<Types.Institution>(`/institutions/${slug}`)
+    return this.normalize<Types.Institution>(response)
+  }
+
+  async createInstitution(data: Types.CreateInstitutionRequest) {
+    const response = await this.client.post<Types.Institution>('/institutions', data)
+    return this.normalize<Types.Institution>(response)
+  }
+
+  async updateInstitution(id: number, data: Types.UpdateInstitutionRequest) {
+    const response = await this.client.patch<Types.Institution>(`/institutions/${id}`, data)
+    return this.normalize<Types.Institution>(response)
+  }
+
+  async deleteInstitution(id: number) {
+    await this.client.delete(`/institutions/${id}`)
+  }
+
   // Helper method to extract error message
   static getErrorMessage(error: unknown): string {
     if (axios.isAxiosError(error)) {

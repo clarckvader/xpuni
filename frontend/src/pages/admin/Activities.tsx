@@ -42,7 +42,7 @@ export default function AdminActivitiesPage() {
 
   const closeForm = () => { setShowForm(false); setEditActivity(null) }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault()
     setSubmitting(true)
     try {

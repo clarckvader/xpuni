@@ -33,7 +33,7 @@ export default function StudentActivityDetailPage() {
     load()
   }, [id])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault()
     if (!id || !file) return
     setSubmitting(true)

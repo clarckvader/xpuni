@@ -42,7 +42,7 @@ export default function AdminRewardsPage() {
 
   const closeForm = () => { setShowForm(false); setEditReward(null) }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault()
     setSubmitting(true)
     try {

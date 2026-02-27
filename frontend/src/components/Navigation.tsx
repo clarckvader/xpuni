@@ -1,26 +1,45 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import {
+  Zap,
+  ClipboardList,
+  Gift,
+  Gem,
+  Link2,
+  Search,
+  Users,
+  Activity,
+  RotateCcw,
+  HeartPulse,
+  Building2,
+  Star,
+  Menu,
+  X,
+  LogOut,
+  User,
+} from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import StellarAddress from './StellarAddress'
 
 const NAV_ITEMS = {
   STUDENT: [
-    { label: 'Activities', href: '/student/activities', icon: '⚡' },
-    { label: 'Submissions', href: '/student/submissions', icon: '📋' },
-    { label: 'Rewards', href: '/student/rewards', icon: '🎁' },
-    { label: 'Balance', href: '/student/balance', icon: '💎' },
-    { label: 'Transactions', href: '/student/transactions', icon: '🔗' },
+    { label: 'Activities', href: '/student/activities', icon: Zap },
+    { label: 'Submissions', href: '/student/submissions', icon: ClipboardList },
+    { label: 'Rewards', href: '/student/rewards', icon: Gift },
+    { label: 'Credits', href: '/student/balance', icon: Gem },
+    { label: 'History', href: '/student/transactions', icon: Link2 },
   ],
   REVIEWER: [
-    { label: 'Submissions', href: '/reviewer/submissions', icon: '🔍' },
-    { label: 'Activities', href: '/student/activities', icon: '⚡' },
+    { label: 'Submissions', href: '/reviewer/submissions', icon: Search },
+    { label: 'Activities', href: '/student/activities', icon: Zap },
   ],
   ADMIN: [
-    { label: 'Users', href: '/admin/users', icon: '👥' },
-    { label: 'Activities', href: '/admin/activities', icon: '⚡' },
-    { label: 'Rewards', href: '/admin/rewards', icon: '🎁' },
-    { label: 'Redemptions', href: '/admin/redemptions', icon: '🔁' },
-    { label: 'Health', href: '/admin/health', icon: '💡' },
+    { label: 'Users', href: '/admin/users', icon: Users },
+    { label: 'Activities', href: '/admin/activities', icon: Activity },
+    { label: 'Institutions', href: '/admin/institutions', icon: Building2 },
+    { label: 'Rewards', href: '/admin/rewards', icon: Gift },
+    { label: 'Redemptions', href: '/admin/redemptions', icon: RotateCcw },
+    { label: 'System', href: '/admin/health', icon: HeartPulse },
   ],
 }
 
@@ -43,8 +62,8 @@ export default function Navigation() {
   }
 
   const items = user ? NAV_ITEMS[user.role] ?? [] : []
-
   const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(href + '/')
+  const stellarKey = user?.stellarPublicKey ?? user?.stellar_key
 
   return (
     <nav
@@ -62,10 +81,7 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
 
           {/* Logo */}
-          <Link
-            to={isAuthenticated ? '/profile' : '/'}
-            className="flex items-center gap-2.5 group"
-          >
+          <Link to={isAuthenticated ? '/profile' : '/'} className="flex items-center gap-2.5 group">
             <div
               style={{
                 width: '2rem',
@@ -77,11 +93,9 @@ export default function Navigation() {
                 justifyContent: 'center',
                 boxShadow: '0 0 16px rgb(139 92 246 / 0.4)',
                 transition: 'box-shadow 0.2s',
-                fontSize: '1rem',
               }}
-              className="group-hover:[box-shadow:0_0_24px_rgb(139_92_246/0.6)]"
             >
-              ✦
+              <Star size={14} color="white" fill="white" />
             </div>
             <div className="flex flex-col leading-tight">
               <span className="font-bold text-sm gradient-text">XPUni</span>
@@ -92,39 +106,36 @@ export default function Navigation() {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {isAuthenticated && items.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all"
-                style={{
-                  color: isActive(item.href) ? 'rgb(139 92 246)' : 'rgb(148 163 184)',
-                  background: isActive(item.href) ? 'rgb(139 92 246 / 0.12)' : 'transparent',
-                  borderBottom: isActive(item.href) ? '2px solid rgb(139 92 246 / 0.6)' : '2px solid transparent',
-                }}
-              >
-                <span style={{ fontSize: '0.75rem' }}>{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
+          <div className="hidden md:flex items-center gap-0.5">
+            {isAuthenticated && items.map((item) => {
+              const Icon = item.icon
+              const active = isActive(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all"
+                  style={{
+                    color: active ? 'rgb(139 92 246)' : 'rgb(148 163 184)',
+                    background: active ? 'rgb(139 92 246 / 0.12)' : 'transparent',
+                    borderBottom: active ? '2px solid rgb(139 92 246 / 0.6)' : '2px solid transparent',
+                  }}
+                >
+                  <Icon size={14} />
+                  {item.label}
+                </Link>
+              )
+            })}
           </div>
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated ? (
               <>
-                {/* Stellar address chip */}
-                {user?.stellar_key && (
-                  <StellarAddress
-                    address={user.stellar_key}
-                    type="account"
-                    testnet
-                    chars={4}
-                  />
+                {stellarKey && (
+                  <StellarAddress address={stellarKey} type="account" testnet chars={4} />
                 )}
 
-                {/* Network badge */}
                 <span
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
                   style={{
@@ -137,18 +148,9 @@ export default function Navigation() {
                   Testnet
                 </span>
 
-                {/* User menu */}
-                <div
-                  style={{
-                    height: '1.25rem',
-                    width: '1px',
-                    background: 'rgb(39 43 65)',
-                  }}
-                />
-                <Link
-                  to="/profile"
-                  className="flex items-center gap-2 group"
-                >
+                <div style={{ height: '1.25rem', width: '1px', background: 'rgb(39 43 65)' }} />
+
+                <Link to="/profile" className="flex items-center gap-2 group">
                   <div
                     style={{
                       width: '2rem',
@@ -162,7 +164,6 @@ export default function Navigation() {
                       fontSize: '0.75rem',
                       fontWeight: 700,
                       color: 'rgb(226 232 240)',
-                      transition: 'all 0.2s',
                     }}
                   >
                     {user?.name?.charAt(0).toUpperCase()}
@@ -182,20 +183,17 @@ export default function Navigation() {
 
                 <button
                   onClick={handleLogout}
-                  className="btn btn-ghost text-xs"
+                  className="flex items-center gap-1.5 btn btn-ghost text-xs"
                   style={{ padding: '0.375rem 0.75rem' }}
                 >
+                  <LogOut size={13} />
                   Sign Out
                 </button>
               </>
             ) : (
               <div className="flex gap-2">
-                <Link to="/login" className="btn btn-ghost text-sm">
-                  Sign In
-                </Link>
-                <Link to="/register" className="btn btn-primary text-sm">
-                  Get Started
-                </Link>
+                <Link to="/login" className="btn btn-ghost text-sm">Sign In</Link>
+                <Link to="/register" className="btn btn-primary text-sm">Get Started</Link>
               </div>
             )}
           </div>
@@ -206,13 +204,7 @@ export default function Navigation() {
             style={{ color: 'rgb(148 163 184)' }}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
 
@@ -222,43 +214,49 @@ export default function Navigation() {
             className="md:hidden py-4 space-y-1 animate-fade-in"
             style={{ borderTop: '1px solid rgb(39 43 65)' }}
           >
-            {isAuthenticated && items.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all"
-                style={{
-                  color: isActive(item.href) ? 'rgb(139 92 246)' : 'rgb(148 163 184)',
-                  background: isActive(item.href) ? 'rgb(139 92 246 / 0.1)' : 'transparent',
-                }}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </Link>
-            ))}
+            {isAuthenticated && items.map((item) => {
+              const Icon = item.icon
+              const active = isActive(item.href)
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-all"
+                  style={{
+                    color: active ? 'rgb(139 92 246)' : 'rgb(148 163 184)',
+                    background: active ? 'rgb(139 92 246 / 0.1)' : 'transparent',
+                  }}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Icon size={15} />
+                  {item.label}
+                </Link>
+              )
+            })}
 
             {isAuthenticated && (
               <div style={{ borderTop: '1px solid rgb(39 43 65)', marginTop: '0.5rem', paddingTop: '0.5rem' }}>
-                {user?.stellar_key && (
+                {stellarKey && (
                   <div className="px-3 py-2">
                     <p style={{ fontSize: '0.7rem', color: 'rgb(100 116 139)', marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Wallet</p>
-                    <StellarAddress address={user.stellar_key} type="account" testnet chars={6} />
+                    <StellarAddress address={stellarKey} type="account" testnet chars={6} />
                   </div>
                 )}
                 <Link
                   to="/profile"
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm"
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm"
                   style={{ color: 'rgb(148 163 184)' }}
                   onClick={() => setMobileMenuOpen(false)}
                 >
+                  <User size={15} />
                   Profile
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm"
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm"
                   style={{ color: 'rgb(239 68 68)' }}
                 >
+                  <LogOut size={15} />
                   Sign Out
                 </button>
               </div>

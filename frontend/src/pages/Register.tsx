@@ -1,10 +1,14 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { Building2 } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { apiClient } from '@/services/api'
+import type { Institution } from '@/types/api'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const institutionSlug = searchParams.get('institution') ?? undefined
   const { register } = useAuth()
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
@@ -13,8 +17,16 @@ export default function RegisterPage() {
   const [role, setRole] = useState<'STUDENT' | 'REVIEWER' | 'ADMIN'>('STUDENT')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [institution, setInstitution] = useState<Institution | null>(null)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!institutionSlug) return
+    apiClient.getInstitution(institutionSlug)
+      .then(setInstitution)
+      .catch(() => { /* ignore if slug is invalid */ })
+  }, [institutionSlug])
+
+  const handleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault()
     setError(null)
 
@@ -31,7 +43,7 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      await register({ email, name, password, role })
+      await register({ email, name, password, role, institutionSlug })
       navigate('/profile')
     } catch (err) {
       setError(apiClient.getErrorMessage(err))
@@ -69,8 +81,37 @@ export default function RegisterPage() {
             <span className="text-xl font-bold gradient-text">XPUni</span>
           </div>
           <h1 className="text-2xl font-bold" style={{ color: 'rgb(226 232 240)' }}>Create Account</h1>
-          <p className="mt-1 text-sm" style={{ color: 'rgb(100 116 139)' }}>Join the on-chain rewards platform</p>
+          <p className="mt-1 text-sm" style={{ color: 'rgb(100 116 139)' }}>
+            {institution ? `Joining ${institution.name}` : 'Join the on-chain rewards platform'}
+          </p>
         </div>
+
+        {/* Institution banner */}
+        {institution && (
+          <div
+            className="flex items-center gap-3 px-4 py-3 rounded-xl mb-4"
+            style={{ background: 'rgb(139 92 246 / 0.08)', border: '1px solid rgb(139 92 246 / 0.25)' }}
+          >
+            <div
+              style={{
+                width: '2rem',
+                height: '2rem',
+                borderRadius: '0.5rem',
+                background: 'rgb(139 92 246 / 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Building2 size={14} style={{ color: 'rgb(139 92 246)' }} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold" style={{ color: 'rgb(139 92 246)' }}>Joining institution</p>
+              <p className="text-sm font-medium truncate" style={{ color: 'rgb(226 232 240)' }}>{institution.name}</p>
+            </div>
+          </div>
+        )}
 
         <div className="card p-8 space-y-5">
           {error && (
@@ -119,7 +160,7 @@ export default function RegisterPage() {
               className="btn btn-primary w-full"
               style={{ opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
-              {loading ? 'Creating Account…' : 'Create Account →'}
+              {loading ? 'Creating Account…' : institution ? `Join ${institution.name} →` : 'Create Account →'}
             </button>
           </form>
 

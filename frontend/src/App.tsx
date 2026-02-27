@@ -1,4 +1,5 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { PrimeReactProvider } from 'primereact/api'
 import { AuthProvider, AuthContext } from '@/context/AuthContext'
 import { NotificationProvider } from '@/context/NotificationContext'
 import Toaster from '@/components/Toaster'
@@ -6,6 +7,7 @@ import { useContext } from 'react'
 
 // Pages
 import LandingPage from '@/pages/Landing'
+import InstitutionPage from '@/pages/InstitutionPage'
 import LoginPage from '@/pages/Login'
 import RegisterPage from '@/pages/Register'
 import ProfilePage from '@/pages/Profile'
@@ -27,6 +29,7 @@ import ReviewerSubmissionDetailPage from '@/pages/reviewer/SubmissionDetail'
 // Admin pages
 import AdminUsersPage from '@/pages/admin/Users'
 import AdminActivitiesPage from '@/pages/admin/Activities'
+import AdminInstitutionsPage from '@/pages/admin/Institutions'
 import AdminRewardsPage from '@/pages/admin/Rewards'
 import AdminRedemptionsPage from '@/pages/admin/Redemptions'
 import AdminHealthPage from '@/pages/admin/Health'
@@ -46,6 +49,7 @@ function AppContent() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/i/:slug" element={<InstitutionPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 
@@ -69,6 +73,7 @@ function AppContent() {
         {/* Admin Routes */}
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/admin/activities" element={<AdminActivitiesPage />} />
+        <Route path="/admin/institutions" element={<AdminInstitutionsPage />} />
         <Route path="/admin/rewards" element={<AdminRewardsPage />} />
         <Route path="/admin/redemptions" element={<AdminRedemptionsPage />} />
         <Route path="/admin/health" element={<AdminHealthPage />} />
@@ -82,13 +87,15 @@ function AppContent() {
 
 export default function App() {
   return (
-    <Router>
-      <AuthProvider persistAuth={true}>
-        <NotificationProvider>
-          <AppContent />
-          <Toaster />
-        </NotificationProvider>
-      </AuthProvider>
-    </Router>
+    <PrimeReactProvider>
+      <Router>
+        <AuthProvider persistAuth={true}>
+          <NotificationProvider>
+            <AppContent />
+            <Toaster />
+          </NotificationProvider>
+        </AuthProvider>
+      </Router>
+    </PrimeReactProvider>
   )
 }

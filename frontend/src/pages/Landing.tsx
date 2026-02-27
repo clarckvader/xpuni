@@ -1,63 +1,93 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  Zap,
+  Gift,
+  Eye,
+  ArrowRight,
+  Building2,
+  Repeat2,
+  ShieldCheck,
+  Star,
+  CheckCircle,
+  XCircle,
+  Loader2,
+} from 'lucide-react'
 import { apiClient } from '@/services/api'
 import StellarAddress from '@/components/StellarAddress'
-import type { HealthResponse } from '@/types/api'
+import type { HealthResponse, Institution } from '@/types/api'
 
 const FEATURES = [
   {
-    icon: '⚡',
-    title: 'On-Chain Achievements',
-    desc: 'Every approved submission mints a verifiable badge on the Stellar blockchain.',
+    icon: Zap,
+    title: 'Verified Achievements',
+    desc: 'Every approved activity earns a permanent, tamper-proof credential — no one can take it away.',
     color: 'rgb(139 92 246)',
   },
   {
-    icon: '🎁',
-    title: 'Token Rewards',
-    desc: 'Earn XPU tokens for completing activities. Redeem them for real rewards.',
+    icon: Gift,
+    title: 'Real Rewards',
+    desc: 'Earn institution credits for completing activities. Redeem them for physical rewards and perks.',
     color: 'rgb(6 182 212)',
   },
   {
-    icon: '🔍',
-    title: 'Fully Transparent',
-    desc: 'All transactions are publicly verifiable on Stellar Expert explorer.',
+    icon: Eye,
+    title: 'Independently Verifiable',
+    desc: 'Your credit balance and history are publicly auditable — no need to trust anyone\'s database.',
     color: 'rgb(16 185 129)',
   },
   {
-    icon: '💎',
-    title: 'Soroban Smart Contracts',
-    desc: 'Powered by Soroban — Stellar\'s high-performance smart contract platform.',
+    icon: ShieldCheck,
+    title: 'You Own Your Credits',
+    desc: 'Credits are stored in your personal wallet, not a company database. They\'re yours, always.',
     color: 'rgb(245 158 11)',
+  },
+]
+
+const HOW_IT_WORKS = [
+  {
+    step: '01',
+    title: 'Join an Institution',
+    desc: 'Register and connect to your university, organization, or partner network.',
+  },
+  {
+    step: '02',
+    title: 'Complete Activities',
+    desc: 'Submit proof of work for activities and earn institution-specific points.',
+  },
+  {
+    step: '03',
+    title: 'Swap & Redeem',
+    desc: 'Exchange points across institutions via the Hub contract, or redeem for physical rewards.',
   },
 ]
 
 export default function LandingPage() {
   const [health, setHealth] = useState<HealthResponse | null>(null)
+  const [institutions, setInstitutions] = useState<Institution[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    apiClient.health()
-      .then(setHealth)
-      .catch(() => setError('Unable to connect to the backend.'))
-      .finally(() => setLoading(false))
+    Promise.allSettled([
+      apiClient.health(),
+      apiClient.listInstitutions(),
+    ]).then(([healthResult, institutionsResult]) => {
+      if (healthResult.status === 'fulfilled') setHealth(healthResult.value)
+      else setError('Unable to connect to the backend.')
+      if (institutionsResult.status === 'fulfilled') setInstitutions(institutionsResult.value)
+    }).finally(() => setLoading(false))
   }, [])
 
   const isHealthy = health?.status === 'ok' || health?.status === 'healthy'
 
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        background: 'rgb(10 11 18)',
-        color: 'rgb(226 232 240)',
-      }}
-    >
+    <div className="min-h-screen" style={{ background: 'rgb(10 11 18)', color: 'rgb(226 232 240)' }}>
       {/* Nav */}
       <nav
         style={{
           borderBottom: '1px solid rgb(39 43 65)',
-          background: 'rgb(10 11 18 / 0.8)',
+          background: 'rgb(10 11 18 / 0.85)',
           backdropFilter: 'blur(12px)',
           position: 'sticky',
           top: 0,
@@ -76,10 +106,9 @@ export default function LandingPage() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 boxShadow: '0 0 16px rgb(139 92 246 / 0.4)',
-                fontSize: '1rem',
               }}
             >
-              ✦
+              <Star size={14} color="white" fill="white" />
             </div>
             <div className="flex flex-col leading-tight">
               <span className="font-bold text-sm gradient-text">XPUni</span>
@@ -95,7 +124,6 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-center">
-        {/* Network badge */}
         <div className="flex justify-center mb-8">
           <span
             className="flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold border"
@@ -106,7 +134,7 @@ export default function LandingPage() {
             }}
           >
             <span className="status-dot status-dot-online" />
-            Live on Stellar Testnet
+            Live Network
           </span>
         </div>
 
@@ -123,22 +151,18 @@ export default function LandingPage() {
           className="text-lg md:text-xl max-w-2xl mx-auto mb-10 text-pretty"
           style={{ color: 'rgb(148 163 184)', lineHeight: 1.7 }}
         >
-          XPUni gamifies learning with blockchain-verified achievements and token rewards
-          built on the Stellar network.
+          XPUni connects institutions in a shared credit network. Complete activities,
+          earn verified credits, and use them across universities, cafeterias, and partner organizations.
         </p>
 
         <div className="flex flex-wrap gap-4 justify-center">
-          <Link to="/register" className="btn btn-primary text-base px-8 py-3">
-            Create Account →
+          <Link to="/register" className="btn btn-primary text-base px-8 py-3 flex items-center gap-2">
+            Create Account <ArrowRight size={16} />
           </Link>
           <Link
             to="/login"
             className="btn text-base px-8 py-3"
-            style={{
-              border: '1px solid rgb(39 43 65)',
-              color: 'rgb(148 163 184)',
-              background: 'transparent',
-            }}
+            style={{ border: '1px solid rgb(39 43 65)', color: 'rgb(148 163 184)', background: 'transparent' }}
           >
             Sign In
           </Link>
@@ -148,40 +172,177 @@ export default function LandingPage() {
       {/* Features */}
       <section className="max-w-6xl mx-auto px-6 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {FEATURES.map((f) => (
-            <div
-              key={f.title}
-              className="card p-6 space-y-3"
-              style={{ borderColor: `${f.color}20` }}
-            >
+          {FEATURES.map((f) => {
+            const Icon = f.icon
+            return (
               <div
-                style={{
-                  width: '2.5rem',
-                  height: '2.5rem',
-                  borderRadius: '0.75rem',
-                  background: `${f.color}15`,
-                  border: `1px solid ${f.color}30`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '1.25rem',
-                }}
+                key={f.title}
+                className="card p-6 space-y-3"
+                style={{ borderColor: `${f.color}20` }}
               >
-                {f.icon}
+                <div
+                  style={{
+                    width: '2.5rem',
+                    height: '2.5rem',
+                    borderRadius: '0.75rem',
+                    background: `${f.color}15`,
+                    border: `1px solid ${f.color}30`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Icon size={18} style={{ color: f.color }} />
+                </div>
+                <h3 className="font-bold text-sm" style={{ color: 'rgb(226 232 240)' }}>{f.title}</h3>
+                <p className="text-xs leading-relaxed" style={{ color: 'rgb(100 116 139)' }}>{f.desc}</p>
               </div>
-              <h3 className="font-bold text-sm" style={{ color: 'rgb(226 232 240)' }}>{f.title}</h3>
-              <p className="text-xs leading-relaxed" style={{ color: 'rgb(100 116 139)' }}>{f.desc}</p>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="max-w-6xl mx-auto px-6 pb-20">
+        <div className="text-center mb-12">
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: 'rgb(139 92 246)' }}>
+            How It Works
+          </p>
+          <h2 className="text-3xl font-bold" style={{ color: 'rgb(226 232 240)' }}>
+            From enrollment to on-chain rewards
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {HOW_IT_WORKS.map((step, i) => (
+            <div key={step.step} className="relative">
+              {i < HOW_IT_WORKS.length - 1 && (
+                <div
+                  className="hidden md:block absolute top-7 left-full w-full h-px"
+                  style={{ background: 'linear-gradient(to right, rgb(39 43 65), transparent)', zIndex: 0 }}
+                />
+              )}
+              <div className="card p-6 space-y-3 relative z-10">
+                <span
+                  className="text-xs font-black font-mono"
+                  style={{ color: 'rgb(139 92 246)' }}
+                >
+                  {step.step}
+                </span>
+                <h3 className="font-bold" style={{ color: 'rgb(226 232 240)' }}>{step.title}</h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'rgb(100 116 139)' }}>{step.desc}</p>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* System status */}
-      <section className="max-w-6xl mx-auto px-6 pb-24">
+      {/* Multi-institution economy */}
+      <section className="max-w-6xl mx-auto px-6 pb-20">
         <div
           className="card p-8"
-          style={{ borderColor: 'rgb(39 43 65)' }}
+          style={{ borderColor: 'rgb(139 92 246 / 0.3)', background: 'rgb(139 92 246 / 0.04)' }}
         >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div
+                  style={{
+                    width: '2.5rem',
+                    height: '2.5rem',
+                    borderRadius: '0.75rem',
+                    background: 'rgb(139 92 246 / 0.15)',
+                    border: '1px solid rgb(139 92 246 / 0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Building2 size={18} style={{ color: 'rgb(139 92 246)' }} />
+                </div>
+                <h2 className="text-xl font-bold" style={{ color: 'rgb(226 232 240)' }}>
+                  Multi-Institution Economy
+                </h2>
+              </div>
+              <p className="text-sm leading-relaxed" style={{ color: 'rgb(148 163 184)' }}>
+                Each institution issues its own credits. The network manages exchange rates
+                and enables instant transfers between any two partner institutions.
+              </p>
+              <div className="space-y-2">
+                {[
+                  { icon: Building2, text: 'Universities, cafeterias, and partner orgs' },
+                  { icon: Repeat2, text: 'Instant cross-institution transfers' },
+                  { icon: ShieldCheck, text: 'Each institution controls its own credits' },
+                ].map(({ icon: Icon, text }) => (
+                  <div key={text} className="flex items-center gap-2.5">
+                    <Icon size={14} style={{ color: 'rgb(139 92 246)', flexShrink: 0 }} />
+                    <span className="text-sm" style={{ color: 'rgb(148 163 184)' }}>{text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Live institutions panel */}
+            <div className="space-y-3">
+              <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'rgb(100 116 139)' }}>
+                Live Institutions
+              </p>
+              {loading && (
+                <div className="flex items-center gap-2 py-4" style={{ color: 'rgb(100 116 139)' }}>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="text-sm">Loading…</span>
+                </div>
+              )}
+              {!loading && institutions.length === 0 && (
+                <p className="text-sm" style={{ color: 'rgb(100 116 139)' }}>
+                  No institutions registered yet.
+                </p>
+              )}
+              {institutions.map((inst) => (
+                <div
+                  key={inst.id}
+                  className="flex items-center justify-between px-4 py-3 rounded-lg"
+                  style={{ background: 'rgb(26 29 44)', border: '1px solid rgb(39 43 65)' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      style={{
+                        width: '1.75rem',
+                        height: '1.75rem',
+                        borderRadius: '0.5rem',
+                        background: 'rgb(139 92 246 / 0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Building2 size={12} style={{ color: 'rgb(139 92 246)' }} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: 'rgb(226 232 240)' }}>{inst.name}</p>
+                      <p className="text-xs font-mono" style={{ color: 'rgb(100 116 139)' }}>
+                        {inst.slug}
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{
+                      background: inst.status === 'ACTIVE' ? 'rgb(16 185 129 / 0.1)' : 'rgb(100 116 139 / 0.1)',
+                      color: inst.status === 'ACTIVE' ? 'rgb(16 185 129)' : 'rgb(100 116 139)',
+                    }}
+                  >
+                    {inst.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* System status */}
+      <section className="max-w-6xl mx-auto px-6 pb-24">
+        <div className="card p-8" style={{ borderColor: 'rgb(39 43 65)' }}>
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-bold" style={{ color: 'rgb(226 232 240)' }}>System Status</h2>
             {health && (
@@ -200,18 +361,18 @@ export default function LandingPage() {
           </div>
 
           {loading && (
-            <p className="text-sm" style={{ color: 'rgb(100 116 139)' }}>Checking connectivity…</p>
+            <div className="flex items-center gap-2" style={{ color: 'rgb(100 116 139)' }}>
+              <Loader2 size={16} className="animate-spin" />
+              <span className="text-sm">Checking connectivity…</span>
+            </div>
           )}
 
           {error && (
             <div
               className="flex items-start gap-3 p-4 rounded-lg"
-              style={{
-                background: 'rgb(239 68 68 / 0.08)',
-                border: '1px solid rgb(239 68 68 / 0.25)',
-              }}
+              style={{ background: 'rgb(239 68 68 / 0.08)', border: '1px solid rgb(239 68 68 / 0.25)' }}
             >
-              <span style={{ color: 'rgb(239 68 68)', marginTop: '0.1rem' }}>✗</span>
+              <XCircle size={16} style={{ color: 'rgb(239 68 68)', flexShrink: 0, marginTop: '0.1rem' }} />
               <div>
                 <p className="font-semibold text-sm" style={{ color: 'rgb(239 68 68)' }}>Backend Unreachable</p>
                 <p className="text-xs mt-0.5" style={{ color: 'rgb(100 116 139)' }}>{error}</p>
@@ -221,50 +382,33 @@ export default function LandingPage() {
 
           {health && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div
-                className="flex items-center justify-between px-4 py-3 rounded-lg"
-                style={{ background: 'rgb(26 29 44)' }}
-              >
-                <span className="text-sm" style={{ color: 'rgb(148 163 184)' }}>API</span>
-                <div className="flex items-center gap-2">
-                  <span className={`status-dot ${isHealthy ? 'status-dot-online' : 'status-dot-offline'}`} />
-                  <span className="text-sm font-mono font-semibold" style={{ color: isHealthy ? 'rgb(16 185 129)' : 'rgb(239 68 68)' }}>
-                    {health.status.toUpperCase()}
-                  </span>
-                </div>
-              </div>
-
-              <div
-                className="flex items-center justify-between px-4 py-3 rounded-lg"
-                style={{ background: 'rgb(26 29 44)' }}
-              >
-                <span className="text-sm" style={{ color: 'rgb(148 163 184)' }}>Database</span>
-                <div className="flex items-center gap-2">
-                  <span className={`status-dot ${health.database === 'connected' ? 'status-dot-online' : 'status-dot-offline'}`} />
-                  <span className="text-sm font-mono font-semibold" style={{ color: health.database === 'connected' ? 'rgb(16 185 129)' : 'rgb(239 68 68)' }}>
-                    {health.database}
-                  </span>
-                </div>
-              </div>
-
-              {health.rpc_available !== undefined && (
+              {[
+                { label: 'API', ok: isHealthy, value: health.status.toUpperCase() },
+                { label: 'Database', ok: health.database === 'connected', value: health.database },
+                ...(health.rpc_available !== undefined
+                  ? [{ label: 'Stellar RPC', ok: health.rpc_available, value: health.rpc_available ? 'Connected' : 'Unavailable' }]
+                  : []),
+              ].map(({ label, ok, value }) => (
                 <div
+                  key={label}
                   className="flex items-center justify-between px-4 py-3 rounded-lg"
                   style={{ background: 'rgb(26 29 44)' }}
                 >
-                  <span className="text-sm" style={{ color: 'rgb(148 163 184)' }}>Stellar RPC</span>
+                  <span className="text-sm" style={{ color: 'rgb(148 163 184)' }}>{label}</span>
                   <div className="flex items-center gap-2">
-                    <span className={`status-dot ${health.rpc_available ? 'status-dot-online' : 'status-dot-offline'}`} />
-                    <span className="text-sm font-mono font-semibold" style={{ color: health.rpc_available ? 'rgb(16 185 129)' : 'rgb(239 68 68)' }}>
-                      {health.rpc_available ? 'Connected' : 'Unavailable'}
+                    {ok
+                      ? <CheckCircle size={14} style={{ color: 'rgb(16 185 129)' }} />
+                      : <XCircle size={14} style={{ color: 'rgb(239 68 68)' }} />
+                    }
+                    <span className="text-sm font-mono font-semibold" style={{ color: ok ? 'rgb(16 185 129)' : 'rgb(239 68 68)' }}>
+                      {value}
                     </span>
                   </div>
                 </div>
-              )}
+              ))}
             </div>
           )}
 
-          {/* Contract addresses */}
           {health?.contracts && (health.contracts.badge_issuer || health.contracts.token_admin) && (
             <div className="mt-6 pt-6" style={{ borderTop: '1px solid rgb(39 43 65)' }}>
               <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'rgb(100 116 139)' }}>
@@ -294,7 +438,7 @@ export default function LandingPage() {
         className="border-t py-8 text-center text-xs"
         style={{ borderColor: 'rgb(39 43 65)', color: 'rgb(100 116 139)' }}
       >
-        <p>XPUni · Built on Stellar · Powered by Soroban smart contracts</p>
+        <p>XPUni · The Cross-Campus Credit Network · Your credits, always yours</p>
       </footer>
     </div>
   )
