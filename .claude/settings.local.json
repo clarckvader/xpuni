@@ -6,7 +6,9 @@
       "Bash(npm uninstall:*)",
       "Bash(npx prisma:*)",
       "WebFetch(domain:www.prisma.io)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(pkill:*)",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"yes\" npx prisma db push:*)"
     ]
   }
 }

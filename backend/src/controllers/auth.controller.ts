@@ -6,6 +6,7 @@ import type { AuthRequest } from '../types';
 const registerSchema = z.object({
   email: z.string().email('Correo inválido'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
+  institutionSlug: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -27,7 +28,7 @@ export class AuthController {
         res.status(400).json({ error: parsed.error.errors[0]?.message });
         return;
       }
-      const result = await this.authService.register(parsed.data.email, parsed.data.password);
+      const result = await this.authService.register(parsed.data.email, parsed.data.password, parsed.data.institutionSlug);
       res.status(201).json({ data: result });
     } catch (err) {
       next(err);

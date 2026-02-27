@@ -34,7 +34,7 @@ export class RedemptionService {
 
     if (currentBalance < BigInt(reward.pointsCost)) {
       throw new BadRequestError(
-        `Saldo insuficiente. Tienes ${currentBalance} puntos, necesitas ${reward.pointsCost}`,
+        `Saldo insuficiente. Tienes ${currentBalance} créditos, necesitas ${reward.pointsCost}`,
       );
     }
 
@@ -44,7 +44,7 @@ export class RedemptionService {
     } catch (err) {
       console.error('Error al quemar puntos:', err);
       throw new ServiceUnavailableError(
-        'Error al procesar el canje en la blockchain. Intenta más tarde.',
+        'Error al procesar el canje. Intenta más tarde.',
       );
     }
 
@@ -58,7 +58,6 @@ export class RedemptionService {
         );
       } catch (err) {
         console.error('Error al registrar canje on-chain:', err);
-        console.warn('El registro on-chain falló. Revisa STELLAR_REDEMPTION_CONTRACT_ID.');
       }
     }
 
@@ -74,12 +73,10 @@ export class RedemptionService {
       redemptionTxHash,
     });
 
-    const burnMsg = `${reward.pointsCost} puntos descontados (tx: ${txHash}).`;
+    const burnMsg = `${reward.pointsCost} créditos descontados (tx: ${txHash}).`;
     const recordMsg = redemptionTxHash
       ? ` Canje registrado on-chain (tx: ${redemptionTxHash}).`
-      : this.config.stellar.redemptionContractId
-        ? ' Registro on-chain falló (ver logs).'
-        : '';
+      : '';
 
     return {
       data: newRedemption,

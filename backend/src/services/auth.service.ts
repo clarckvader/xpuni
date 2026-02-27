@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/user.repository';
+import { InstitutionRepository } from '../repositories/institution.repository';
 import { StellarService } from './stellar.service';
 import { generateToken } from '../middleware/auth';
 import { BadRequestError, ConflictError, NotFoundError, UnauthorizedError } from '../errors';
@@ -8,13 +9,25 @@ import type { AppConfig } from '../config';
 export class AuthService {
   constructor(
     private readonly userRepo: UserRepository,
+    private readonly institutionRepo: InstitutionRepository,
     private readonly stellarService: StellarService,
     private readonly config: AppConfig,
   ) {}
 
-  async register(email: string, password: string) {
+  async register(email: string, password: string, institutionSlug?: string) {
     const existing = await this.userRepo.findByEmail(email);
     if (existing) throw new ConflictError('El correo ya está registrado');
+
+    // Look up institution if slug provided (silently ignore invalid slugs)
+    let institutionId: number | null = null;
+    if (institutionSlug) {
+      try {
+        const inst = await this.institutionRepo.findBySlug(institutionSlug);
+        if (inst && inst.status === 'ACTIVE') institutionId = inst.id;
+      } catch {
+        // Ignore: user still registers without institution
+      }
+    }
 
     const passwordHash = await bcrypt.hash(password, 12);
     const { publicKey, encryptedSecret } = await this.stellarService.generateAndFundAccount();
@@ -25,6 +38,7 @@ export class AuthService {
       role: 'STUDENT',
       stellarPublicKey: publicKey,
       encryptedStellarSecret: encryptedSecret,
+      institutionId,
     });
 
     const token = generateToken({ id: user.id, email: user.email, role: user.role as import('../types').Role });
@@ -64,20 +78,23 @@ export class AuthService {
     const user = await this.userRepo.findById(userId);
     if (!user) throw new NotFoundError('Usuario no encontrado');
 
-    let onChainBalance = '0';
-    try {
-      const balance = await this.stellarService.getBalance(user.stellarPublicKey);
-      onChainBalance = balance.toString();
-    } catch (err) {
-      console.warn('No se pudo obtener el saldo on-chain:', err);
+    let pointsBalance = '0';
+    if (this.config.stellar.contractId) {
+      try {
+        const balance = await this.stellarService.getBalance(user.stellarPublicKey);
+        pointsBalance = balance.toString();
+      } catch (err) {
+        console.warn('No se pudo obtener el saldo on-chain:', err);
+      }
     }
 
     return {
       id: user.id,
       email: user.email,
       role: user.role,
+      institutionId: user.institutionId,
       stellarPublicKey: user.stellarPublicKey,
-      pointsBalance: onChainBalance,
+      pointsBalance,
       createdAt: user.createdAt,
     };
   }

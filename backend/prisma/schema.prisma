@@ -6,35 +6,53 @@ datasource db {
   provider = "sqlite"
 }
 
+model Institution {
+  id          Int     @id @default(autoincrement())
+  name        String
+  slug        String  @unique
+  description String?
+  logoUrl     String? @map("logo_url")
+  category    String  @default("general")
+  status      String  @default("ACTIVE")
+  createdAt   String  @default(dbgenerated("(datetime('now'))")) @map("created_at")
+
+  users    User[]
+  rewards  Reward[]
+
+  @@map("institutions")
+}
+
 model User {
   id                     Int      @id @default(autoincrement())
   email                  String   @unique
   passwordHash           String   @map("password_hash")
   role                   String   @default("STUDENT")
+  institutionId          Int?     @map("institution_id")
   stellarPublicKey       String   @map("stellar_public_key")
   encryptedStellarSecret String   @map("encrypted_stellar_secret")
   createdAt              String   @default(dbgenerated("(datetime('now'))")) @map("created_at")
 
-  activities           Activity[]        @relation("ActivityCreatedBy")
-  submissions          ProofSubmission[] @relation("SubmissionStudent")
-  reviewedSubmissions  ProofSubmission[] @relation("SubmissionReviewer")
-  rewards              Reward[]          @relation("RewardCreatedBy")
-  redemptions          Redemption[]      @relation("RedemptionStudent")
+  institution         Institution?      @relation(fields: [institutionId], references: [id])
+  activities          Activity[]        @relation("ActivityCreatedBy")
+  submissions         ProofSubmission[] @relation("SubmissionStudent")
+  reviewedSubmissions ProofSubmission[] @relation("SubmissionReviewer")
+  rewards             Reward[]          @relation("RewardCreatedBy")
+  redemptions         Redemption[]      @relation("RedemptionStudent")
 
   @@map("users")
 }
 
 model Activity {
-  id             Int      @id @default(autoincrement())
+  id             Int     @id @default(autoincrement())
   title          String
   description    String
-  pointsReward   Int      @map("points_reward")
+  pointsReward   Int     @map("points_reward")
   deadline       String?
-  maxSubmissions Int?     @map("max_submissions")
-  createdBy      Int      @map("created_by")
-  status         String   @default("ACTIVE")
-  badgeImageUrl  String?  @map("badge_image_url")
-  createdAt      String   @default(dbgenerated("(datetime('now'))")) @map("created_at")
+  maxSubmissions Int?    @map("max_submissions")
+  createdBy      Int     @map("created_by")
+  status         String  @default("ACTIVE")
+  badgeImageUrl  String? @map("badge_image_url")
+  createdAt      String  @default(dbgenerated("(datetime('now'))")) @map("created_at")
 
   creator     User              @relation("ActivityCreatedBy", fields: [createdBy], references: [id])
   submissions ProofSubmission[]
@@ -64,17 +82,19 @@ model ProofSubmission {
 }
 
 model Reward {
-  id          Int     @id @default(autoincrement())
-  name        String
-  description String
-  pointsCost  Int     @map("points_cost")
-  rewardType  String  @map("reward_type")
-  stock       Int?
-  imageUrl    String? @map("image_url")
-  createdBy   Int     @map("created_by")
-  status      String  @default("ACTIVE")
-  createdAt   String  @default(dbgenerated("(datetime('now'))")) @map("created_at")
+  id            Int     @id @default(autoincrement())
+  name          String
+  description   String
+  pointsCost    Int     @map("points_cost")
+  rewardType    String  @map("reward_type")
+  stock         Int?
+  imageUrl      String? @map("image_url")
+  institutionId Int?    @map("institution_id")
+  createdBy     Int     @map("created_by")
+  status        String  @default("ACTIVE")
+  createdAt     String  @default(dbgenerated("(datetime('now'))")) @map("created_at")
 
+  institution Institution? @relation(fields: [institutionId], references: [id])
   creator     User         @relation("RewardCreatedBy", fields: [createdBy], references: [id])
   redemptions Redemption[]
 

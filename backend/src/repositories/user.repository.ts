@@ -29,6 +29,7 @@ export class UserRepository {
     role: string;
     stellarPublicKey: string;
     encryptedStellarSecret: string;
+    institutionId?: number | null;
   }) {
     return this.prisma.user.create({ data });
   }

@@ -12,6 +12,7 @@ import activitiesRouter from './routes/activities';
 import submissionsRouter from './routes/submissions';
 import rewardsRouter from './routes/rewards';
 import redemptionsRouter from './routes/redemptions';
+import institutionsRouter from './routes/institutions';
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use('/api/activities', activitiesRouter);
 app.use('/api/submissions', submissionsRouter);
 app.use('/api/rewards', rewardsRouter);
 app.use('/api/redemptions', redemptionsRouter);
+app.use('/api/institutions', institutionsRouter);
 
 // Ruta raíz de salud
 app.get('/api/health', (_req, res) => {

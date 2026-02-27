@@ -105,10 +105,7 @@ export class SubmissionService {
     let txHash: string | null = null;
     let mintError: string | null = null;
     try {
-      txHash = await this.stellarService.mintPoints(
-        student.stellarPublicKey,
-        activity.pointsReward,
-      );
+      txHash = await this.stellarService.mintPoints(student.stellarPublicKey, activity.pointsReward);
     } catch (err) {
       mintError = err instanceof Error ? err.message : String(err);
       console.error('Error al acuñar puntos:', err);

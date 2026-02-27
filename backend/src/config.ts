@@ -33,6 +33,7 @@ export const config = {
     contractId: process.env['STELLAR_CONTRACT_ID'] ?? '',
     badgeContractId: process.env['STELLAR_BADGE_CONTRACT_ID'] ?? '',
     redemptionContractId: process.env['STELLAR_REDEMPTION_CONTRACT_ID'] ?? '',
+    hubContractId: process.env['STELLAR_HUB_CONTRACT_ID'] ?? '',
   },
 
   uploadsDir: optional('UPLOADS_DIR', './uploads'),

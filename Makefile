@@ -15,12 +15,14 @@ ADMIN_PUBLIC_KEY      ?= $(STELLAR_ADMIN_PUBLIC_KEY)
 POINTS_CONTRACT_ID     ?= $(STELLAR_CONTRACT_ID)
 BADGES_CONTRACT_ID     ?= $(STELLAR_BADGE_CONTRACT_ID)
 REDEMPTION_CONTRACT_ID ?= $(STELLAR_REDEMPTION_CONTRACT_ID)
+HUB_CONTRACT_ID        ?= $(STELLAR_HUB_CONTRACT_ID)
 
 # ── Rutas ─────────────────────────────────────────────────────────────────────
 WASM_DIR         := target/wasm32-unknown-unknown/release
 POINTS_WASM      := $(WASM_DIR)/school_points.wasm
 BADGES_WASM      := $(WASM_DIR)/achievement_badges.wasm
 REDEMPTION_WASM  := $(WASM_DIR)/redemption_records.wasm
+HUB_WASM         := $(WASM_DIR)/institution_hub.wasm
 
 # ── Colores ───────────────────────────────────────────────────────────────────
 BOLD  := \033[1m
@@ -33,10 +35,11 @@ RESET := \033[0m
 # ── Default ───────────────────────────────────────────────────────────────────
 .DEFAULT_GOAL := help
 
-.PHONY: help keys build build-points build-badges build-redemptions \
-        test test-points test-badges test-redemptions \
-        deploy deploy-points deploy-badges deploy-redemptions \
-        init-points init-badges init-redemptions \
+.PHONY: help keys build build-points build-badges build-redemptions build-hub \
+        test test-points test-badges test-redemptions test-hub \
+        deploy deploy-points deploy-badges deploy-redemptions deploy-hub \
+        init-points init-badges init-redemptions init-hub \
+        register-institution set-rate \
         clean
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -73,7 +76,8 @@ help:
 	@printf "  ADMIN_PUBLIC_KEY=$(BOLD)$(ADMIN_PUBLIC_KEY)$(RESET)\n"
 	@printf "  POINTS_CONTRACT_ID=$(BOLD)$(POINTS_CONTRACT_ID)$(RESET)\n"
 	@printf "  BADGES_CONTRACT_ID=$(BOLD)$(BADGES_CONTRACT_ID)$(RESET)\n"
-	@printf "  REDEMPTION_CONTRACT_ID=$(BOLD)$(REDEMPTION_CONTRACT_ID)$(RESET)\n\n"
+	@printf "  REDEMPTION_CONTRACT_ID=$(BOLD)$(REDEMPTION_CONTRACT_ID)$(RESET)\n"
+	@printf "  HUB_CONTRACT_ID=$(BOLD)$(HUB_CONTRACT_ID)$(RESET)\n\n"
 	@printf "$(YELLOW)Flujo completo (primera vez):$(RESET)\n"
 	@printf "  1. make keys\n"
 	@printf "  2. Copia las claves en backend/.env\n"
@@ -81,7 +85,8 @@ help:
 	@printf "  4. make init-points       POINTS_CONTRACT_ID=<ID>     ADMIN_PUBLIC_KEY=<G...>\n"
 	@printf "  5. make init-badges       BADGES_CONTRACT_ID=<ID>     ADMIN_PUBLIC_KEY=<G...>\n"
 	@printf "  6. make init-redemptions  REDEMPTION_CONTRACT_ID=<ID> ADMIN_PUBLIC_KEY=<G...>\n"
-	@printf "  7. Agrega los IDs en backend/.env y arranca el servidor\n\n"
+	@printf "  7. make init-hub          HUB_CONTRACT_ID=<ID>        ADMIN_PUBLIC_KEY=<G...>\n"
+	@printf "  8. Agrega los IDs en backend/.env y arranca el servidor\n\n"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PREREQUISITOS: generar clave admin
@@ -108,7 +113,7 @@ keys:
 # ══════════════════════════════════════════════════════════════════════════════
 # BUILD
 # ══════════════════════════════════════════════════════════════════════════════
-build: build-points build-badges build-redemptions
+build: build-points build-badges build-redemptions build-hub
 
 build-points:
 	@printf "$(BOLD)Compilando school_points...$(RESET)\n"
@@ -125,10 +130,15 @@ build-redemptions:
 	cargo build --target wasm32-unknown-unknown --release -p redemption-records
 	@printf "$(GREEN)✓ $(REDEMPTION_WASM)$(RESET)\n"
 
+build-hub:
+	@printf "$(BOLD)Compilando institution_hub...$(RESET)\n"
+	cargo build --target wasm32-unknown-unknown --release -p institution-hub
+	@printf "$(GREEN)✓ $(HUB_WASM)$(RESET)\n"
+
 # ══════════════════════════════════════════════════════════════════════════════
 # TEST
 # ══════════════════════════════════════════════════════════════════════════════
-test: test-points test-badges test-redemptions
+test: test-points test-badges test-redemptions test-hub
 
 test-points:
 	@printf "$(BOLD)Tests school_points...$(RESET)\n"
@@ -142,10 +152,14 @@ test-redemptions:
 	@printf "$(BOLD)Tests redemption_records...$(RESET)\n"
 	cargo test -p redemption-records
 
+test-hub:
+	@printf "$(BOLD)Tests institution_hub...$(RESET)\n"
+	cargo test -p institution-hub
+
 # ══════════════════════════════════════════════════════════════════════════════
 # DEPLOY
 # ══════════════════════════════════════════════════════════════════════════════
-deploy: deploy-points deploy-badges deploy-redemptions
+deploy: deploy-points deploy-badges deploy-redemptions deploy-hub
 
 deploy-points: build-points
 	@printf "$(BOLD)Desplegando school_points en $(NETWORK)...$(RESET)\n"
@@ -185,6 +199,19 @@ deploy-redemptions: build-redemptions
 	printf "$(YELLOW)Pasos siguientes:$(RESET)\n" && \
 	printf "  1. backend/.env  →  STELLAR_REDEMPTION_CONTRACT_ID=$$CONTRACT_ID\n" && \
 	printf "  2. make init-redemptions REDEMPTION_CONTRACT_ID=$$CONTRACT_ID ADMIN_PUBLIC_KEY=$(ADMIN_PUBLIC_KEY)\n\n"
+
+deploy-hub: build-hub
+	@printf "$(BOLD)Desplegando institution_hub en $(NETWORK)...$(RESET)\n"
+	@printf "$(CYAN)Esto puede tardar 30-60 segundos$(RESET)\n"
+	@CONTRACT_ID=$$(stellar contract deploy \
+	  --wasm $(HUB_WASM) \
+	  --source $(SOURCE) \
+	  --network $(NETWORK)) && \
+	printf "$(GREEN)✓ institution_hub desplegado$(RESET)\n" && \
+	printf "\n  $(BOLD)CONTRACT_ID: $$CONTRACT_ID$(RESET)\n\n" && \
+	printf "$(YELLOW)Pasos siguientes:$(RESET)\n" && \
+	printf "  1. backend/.env  →  STELLAR_HUB_CONTRACT_ID=$$CONTRACT_ID\n" && \
+	printf "  2. make init-hub HUB_CONTRACT_ID=$$CONTRACT_ID ADMIN_PUBLIC_KEY=$(ADMIN_PUBLIC_KEY)\n\n"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # INITIALIZE
@@ -233,6 +260,54 @@ init-redemptions:
 	  -- initialize \
 	  --admin $(ADMIN_PUBLIC_KEY)
 	@printf "$(GREEN)✓ redemption_records inicializado$(RESET)\n"
+
+init-hub:
+	@test -n "$(HUB_CONTRACT_ID)" || \
+	  (printf "$(RED)Error: HUB_CONTRACT_ID es requerido$(RESET)\n" && exit 1)
+	@test -n "$(ADMIN_PUBLIC_KEY)" || \
+	  (printf "$(RED)Error: ADMIN_PUBLIC_KEY es requerido$(RESET)\n" && exit 1)
+	@printf "$(BOLD)Inicializando institution_hub ($(HUB_CONTRACT_ID))...$(RESET)\n"
+	stellar contract invoke \
+	  --id $(HUB_CONTRACT_ID) \
+	  --source $(SOURCE) \
+	  --network $(NETWORK) \
+	  -- initialize \
+	  --admin $(ADMIN_PUBLIC_KEY)
+	@printf "$(GREEN)✓ institution_hub inicializado$(RESET)\n"
+
+# Register an institution in the hub. Usage:
+#   make register-institution HUB_CONTRACT_ID=C... INST_ID=1 TOKEN_CONTRACT=C... INST_ADMIN=G...
+register-institution:
+	@test -n "$(HUB_CONTRACT_ID)" || (printf "$(RED)Error: HUB_CONTRACT_ID requerido$(RESET)\n" && exit 1)
+	@test -n "$(INST_ID)" || (printf "$(RED)Error: INST_ID requerido$(RESET)\n" && exit 1)
+	@test -n "$(TOKEN_CONTRACT)" || (printf "$(RED)Error: TOKEN_CONTRACT requerido$(RESET)\n" && exit 1)
+	@test -n "$(INST_ADMIN)" || (printf "$(RED)Error: INST_ADMIN requerido$(RESET)\n" && exit 1)
+	stellar contract invoke \
+	  --id $(HUB_CONTRACT_ID) \
+	  --source $(SOURCE) \
+	  --network $(NETWORK) \
+	  -- register_institution \
+	  --institution_id $(INST_ID) \
+	  --token_contract $(TOKEN_CONTRACT) \
+	  --inst_admin $(INST_ADMIN)
+	@printf "$(GREEN)✓ Institución $(INST_ID) registrada$(RESET)\n"
+
+# Set swap rate between two token contracts. Usage:
+#   make set-rate HUB_CONTRACT_ID=C... FROM=C... TO=C... RATE=1000000
+set-rate:
+	@test -n "$(HUB_CONTRACT_ID)" || (printf "$(RED)Error: HUB_CONTRACT_ID requerido$(RESET)\n" && exit 1)
+	@test -n "$(FROM)" || (printf "$(RED)Error: FROM (contract) requerido$(RESET)\n" && exit 1)
+	@test -n "$(TO)" || (printf "$(RED)Error: TO (contract) requerido$(RESET)\n" && exit 1)
+	@test -n "$(RATE)" || (printf "$(RED)Error: RATE requerido (1_000_000 = 1:1)$(RESET)\n" && exit 1)
+	stellar contract invoke \
+	  --id $(HUB_CONTRACT_ID) \
+	  --source $(SOURCE) \
+	  --network $(NETWORK) \
+	  -- set_exchange_rate \
+	  --from_contract $(FROM) \
+	  --to_contract $(TO) \
+	  --rate $(RATE)
+	@printf "$(GREEN)✓ Tasa $(FROM) → $(TO) = $(RATE)$(RESET)\n"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # CLEAN

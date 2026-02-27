@@ -19,12 +19,14 @@ import { ActivityRepository } from './repositories/activity.repository';
 import { SubmissionRepository } from './repositories/submission.repository';
 import { RewardRepository } from './repositories/reward.repository';
 import { RedemptionRepository } from './repositories/redemption.repository';
+import { InstitutionRepository } from './repositories/institution.repository';
 
 export const userRepo = new UserRepository(prisma);
 export const activityRepo = new ActivityRepository(prisma);
 export const submissionRepo = new SubmissionRepository(prisma);
 export const rewardRepo = new RewardRepository(prisma);
 export const redemptionRepo = new RedemptionRepository(prisma);
+export const institutionRepo = new InstitutionRepository(prisma);
 
 // ── Services ──────────────────────────────────────────────────────────────────
 
@@ -34,8 +36,9 @@ import { ActivityService } from './services/activity.service';
 import { SubmissionService } from './services/submission.service';
 import { RewardService } from './services/reward.service';
 import { RedemptionService } from './services/redemption.service';
+import { InstitutionService } from './services/institution.service';
 
-export const authService = new AuthService(userRepo, stellarService, config);
+export const authService = new AuthService(userRepo, institutionRepo, stellarService, config);
 export const userService = new UserService(userRepo, stellarService);
 export const activityService = new ActivityService(activityRepo);
 export const submissionService = new SubmissionService(
@@ -53,6 +56,7 @@ export const redemptionService = new RedemptionService(
   stellarService,
   config,
 );
+export const institutionService = new InstitutionService(institutionRepo);
 
 // ── Controllers ───────────────────────────────────────────────────────────────
 
@@ -62,6 +66,7 @@ import { ActivityController } from './controllers/activity.controller';
 import { SubmissionController } from './controllers/submission.controller';
 import { RewardController } from './controllers/reward.controller';
 import { RedemptionController } from './controllers/redemption.controller';
+import { InstitutionController } from './controllers/institution.controller';
 
 export const authController = new AuthController(authService);
 export const userController = new UserController(userService);
@@ -69,3 +74,4 @@ export const activityController = new ActivityController(activityService);
 export const submissionController = new SubmissionController(submissionService);
 export const rewardController = new RewardController(rewardService);
 export const redemptionController = new RedemptionController(redemptionService);
+export const institutionController = new InstitutionController(institutionService);
